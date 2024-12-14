@@ -1,74 +1,67 @@
 import os
-import re
-from pynput import keyboard
+import time
+import pyautogui
 
-# Ruta al archivo de configuración de Minecraft
-MINECRAFT_OPTIONS_PATH = os.path.expanduser(r'~\AppData\Roaming\.minecraft\options.txt')
-RESOURCE_PACK_NAME = 'file/my_custom_pack'  # Nombre de tu paquete de recursos
+# ⚙️ Rutas de archivos (ajústalas según tu sistema)
+options_path = r'C:\Users\TuUsuario\AppData\Roaming\.minecraft\options.txt'
+resourcepacks_path = r'C:\Users\TuUsuario\AppData\Roaming\.minecraft\resourcepacks'
+pack_name = 'MiPaquete.zip'  # Nombre exacto del paquete de texturas
+temp_pack_name = 'TempPack.zip'  # Nombre temporal para forzar la actualización
 
-def toggle_resource_pack():
-    """Activa o desactiva el paquete de recursos en options.txt"""
-    try:
-        # Leer el archivo options.txt
-        with open(MINECRAFT_OPTIONS_PATH, 'r') as file:
-            content = file.read()
+# 📝 1️⃣ Actualizar options.txt
+print("[1/3] Actualizando options.txt...")
 
-        # Buscar la línea que contiene resourcePacks
-        match = re.search(r'resourcePacks:\[(.*?)\]', content)
-        
-        if match:
-            # Obtener la lista de paquetes de recursos actuales
-            current_packs = match.group(1).split(',')
+try:
+    with open(options_path, 'r') as file:
+        lines = file.readlines()
 
-            if f'"{RESOURCE_PACK_NAME}"' in current_packs:
-                print(f"Desactivando el paquete de recursos: {RESOURCE_PACK_NAME}")
-                current_packs.remove(f'"{RESOURCE_PACK_NAME}"')
-            else:
-                print(f"Activando el paquete de recursos: {RESOURCE_PACK_NAME}")
-                current_packs.append(f'"{RESOURCE_PACK_NAME}"')
-            
-            # Crear la nueva línea de resourcePacks
-            new_resource_packs = f'resourcePacks:[{",".join(current_packs)}]'
-            
-            # Reemplazar la línea de resourcePacks en el contenido
-            new_content = re.sub(r'resourcePacks:\[(.*?)\]', new_resource_packs, content)
-            
-            # Guardar los cambios en el archivo options.txt
-            with open(MINECRAFT_OPTIONS_PATH, 'w') as file:
-                file.write(new_content)
-            
-            print("El archivo options.txt se ha actualizado correctamente.")
-        else:
-            print("No se encontró la línea resourcePacks en options.txt.")
-    except Exception as e:
-        print(f"Error al actualizar options.txt: {e}")
+    for i in range(len(lines)):
+        if 'resourcePacks:' in lines[i]:
+            # Cambia el paquete de texturas que se quiere activar
+            lines[i] = f'resourcePacks:["file/{pack_name}"]\n'
+            print(f"🔄 Línea actualizada: {lines[i].strip()}")
 
-def on_activate():
-    """Acción cuando se presiona la tecla de acceso rápido"""
-    print("Tecla presionada, cambiando el paquete de recursos...")
-    toggle_resource_pack()
+    with open(options_path, 'w') as file:
+        file.writelines(lines)
 
-def for_canonical(f):
-    """Convierte la tecla a un formato canónico"""
-    return lambda k: f(l.canonical(k))
+    print("✅ options.txt actualizado correctamente.")
+except Exception as e:
+    print(f"❌ Error al actualizar options.txt: {e}")
 
-if __name__ == "__main__":
-    # Define la tecla de acceso rápido (Ctrl + Shift + R)
-    HOTKEY = {keyboard.Key.ctrl_l, keyboard.Key.shift, keyboard.KeyCode(char='r')}
-    current_keys = set()
 
-    def on_press(key):
-        """Se activa al presionar una tecla"""
-        current_keys.add(key)
-        if all(k in current_keys for k in HOTKEY):
-            on_activate()
+# 📁 2️⃣ Renombrar el paquete de texturas para forzar la detección
+print("[2/3] Forzando la detección del paquete de texturas...")
 
-    def on_release(key):
-        """Se activa al soltar una tecla"""
-        if key in current_keys:
-            current_keys.remove(key)
+try:
+    pack_path = os.path.join(resourcepacks_path, pack_name)
+    temp_pack_path = os.path.join(resourcepacks_path, temp_pack_name)
+    
+    # Renombrar el paquete de texturas temporalmente
+    os.rename(pack_path, temp_pack_path)
+    print(f"🔄 Paquete de texturas renombrado a {temp_pack_name}")
+    
+    # Esperar 2 segundos para permitir la detección de cambios
+    time.sleep(2)
+    
+    # Renombrar el paquete de vuelta a su nombre original
+    os.rename(temp_pack_path, pack_path)
+    print(f"✅ Paquete de texturas renombrado de vuelta a {pack_name}")
+except Exception as e:
+    print(f"❌ Error al renombrar el paquete de texturas: {e}")
 
-    print("Presiona CTRL + SHIFT + R para cambiar el paquete de recursos.")
-    with keyboard.Listener(on_press=on_press, on_release=on_release) as l:
-        l.join()
-        
+
+# 🕹️ 3️⃣ Simular F3 + T para recargar texturas
+print("[3/3] Simulando la combinación de teclas F3 + T...")
+
+try:
+    # Espera 5 segundos para que puedas volver a Minecraft
+    print("⏳ Tienes 5 segundos para volver a la ventana de Minecraft...")
+    time.sleep(5)
+
+    # Simula la combinación de teclas F3 + T
+    pyautogui.hotkey('f3', 't')
+    print("✅ Combinación de teclas F3 + T ejecutada correctamente.")
+except Exception as e:
+    print(f"❌ Error al simular la combinación de teclas: {e}")
+
+print("🎉 ¡El proceso ha terminado!")
